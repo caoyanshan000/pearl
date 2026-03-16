@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专卖店建店全案系统 V6.0</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #cbd5e1;
+        }
+
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; line-height: 1.5; }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 420px; gap: 20px; }
+        
+        @media (max-width: 950px) { .container { grid-template-columns: 1fr; } .preview-aside { position: static; } }
+
+        .card { background: var(--card); padding: 24px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { font-size: 1.1rem; margin: 0 0 20px; color: var(--primary); display: flex; align-items: center; border-left: 5px solid var(--primary); padding-left: 12px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 12px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.85rem; color: #475569; }
+        
+        /* 输入组件 */
+        .input-group { position: relative; display: flex; align-items: center; }
+        .input-group input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; transition: 0.2s; }
+        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .input-group .unit { position: absolute; right: 12px; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
+
+        /* 拍照模块 */
+        .photo-upload-box { 
+            border: 2px dashed var(--primary); 
+            background: #eff6ff; 
+            border-radius: 12px; 
+            padding: 30px; 
+            text-align: center; 
+            cursor: pointer; 
+            position: relative;
+            transition: 0.3s;
+        }
+        .photo-upload-box:hover { background: #dbeafe; }
+        .photo-upload-box input { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+        .photo-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; margin-top: 20px; }
+        .img-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* 墙体行 */
+        .wall-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 40px; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 10px; align-items: center; }
+
+        /* 预览区 */
+        .preview-aside { background: #1e293b; color: white; border-radius: 16px; padding: 20px; height: fit-content; position: sticky; top: 15px; }
+        #canvas-box { background: #0f172a; border-radius: 12px; overflow: hidden; margin-top: 15px; border: 1px solid #334155; }
+        canvas { width: 100%; height: 350px; display: block; }
+
+        .btn { cursor: pointer; border: none; border-radius: 10px; padding: 14px; font-weight: 600; width: 100%; }
+        .btn-add { background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; margin-top: 8px; }
+        .btn-submit { background: var(--primary); color: white; font-size: 1.1rem; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <main>
+        <form id="storeForm">
+            <div class="card">
+                <h2>1. 基础信息</h2>
+                <div class="form-grid">
+                    <div><label>店长姓名</label><input type="text" name="owner" required></div>
+                    <div><label>联系电话</label><input type="tel" name="phone" required></div>
+                    <div>
+                        <label>门店总面积</label>
+                        <div class="input-group">
+                            <input type="number" step="0.1" name="total_area">
+                            <span class="unit">$m^2$</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. 门头配置</h2>
+                <div class="form-grid">
+                    <div><label>门头宽 (m)</label><input type="number" step="0.01" oninput="draw()"></div>
+                    <div><label>门头高 (m)</label><input type="number" step="0.01"></div>
+                    <div>
+                        <label>核心品类</label>
+                        <select><option>防水涂料</option><option>瓷砖胶</option><option>砂粉</option><option>胶粘剂</option><option>管道</option></select>
+                    </div>
+                </div>
+                <div style="margin-top:15px;">
+                    <label>门头是否增加客户信息？</label>
+                    <select onchange="document.getElementById('signExtra').style.display=this.value==='是'?'block':'none'">
+                        <option value="否">否</option><option value="是">是</option>
+                    </select>
+                </div>
+                <div id="signExtra" style="display:none; background:#f8fafc; padding:15px; border-radius:10px; margin-top:10px; border:1px solid #e2e8f0;">
+                    <div class="form-grid">
+                        <div><label>显示手机</label><input type="tel"></div>
+                        <div><label>显示地址/店名</label><input type="text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>3. 门店平面尺寸记录</h2>
+                <div id="wallList"></div>
+                <button type="button" class="btn btn-add" onclick="addWall()">+ 增加一面墙 (m)</button>
+            </div>
+
+            <div class="card">
+                <h2>4. 现场照片拍摄</h2>
+                <div class="photo-upload-box">
+                    <p style="margin:0; font-size:1.1rem;">📸 点击拍照或上传照片</p>
+                    <p style="margin:8px 0 0; color:#64748b; font-size:0.8rem;">请拍摄门头全景、各面墙体细节</p>
+                    <input type="file" accept="image/*" multiple onchange="handlePhotos(this)">
+                </div>
+                <div id="photoPreview" class="photo-preview"></div>
+            </div>
+
+            <button type="submit" class="btn btn-submit">保 存 并 提 交 审 核</button>
+        </form>
+    </main>
+
+    <aside class="preview-aside">
+        <h2 style="color:white; border-color:white;">实时设计预览</h2>
+        <div id="canvas-box">
+            <canvas id="planCanvas"></canvas>
+        </div>
+        
+        <div style="margin-top:20px; border-top:1px solid #334155; padding-top:15px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="color:#94a3b8">测量墙体数</span>
+                <span id="statWall">0 面</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="color:#94a3b8">预估室内周长</span>
+                <span id="statPeri">0.00 m</span>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    let walls = [
+        { n: '正面墙', w: 5.0, h: 2.8 },
+        { n: '右侧墙', w: 4.0, h: 2.8 },
+        { n: '后侧墙', w: 5.0, h: 2.8 },
+        { n: '左侧墙', w: 4.0, h: 2.8 }
+    ];
+
+    function addWall() {
+        walls.push({ n: `墙面${walls.length+1}`, w: 3.0, h: 2.8 });
+        init();
+    }
+
+    function removeWall(i) {
+        walls.splice(i, 1);
+        init();
+    }
+
+    function update(i, field, val) {
+        walls[i][field] = parseFloat(val) || 0;
+        draw();
+    }
+
+    function init() {
+        const list = document.getElementById('wallList');
+        list.innerHTML = '';
+        walls.forEach((w, i) => {
+            const div = document.createElement('div');
+            div.className = 'wall-row';
+            div.innerHTML = `
+                <div style="font-size:0.85rem; font-weight:bold;">${w.n}</div>
+                <div class="input-group"><input type="number" value="${w.w}" oninput="update(${i},'w',this.value)"><span class="unit">m</span></div>
+                <div class="input-group"><input type="number" value="${w.h}" oninput="update(${i},'h',this.value)"><span class="unit">m</span></div>
+                <button type="button" onclick="removeWall(${i})" style="border:none; background:none; color:#f43f5e; font-size:1.2rem; cursor:pointer;">✕</button>
+            `;
+            list.appendChild(div);
+        });
+        draw();
+    }
+
+    // 核心绘图：自动按比例缩放
+    function draw() {
+        const canvas = document.getElementById('planCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width = canvas.offsetWidth;
+        const H = canvas.height = 350;
+        ctx.clearRect(0,0,W,H);
+
+        if(!walls.length) return;
+
+        let peri = 0; walls.forEach(v=>peri+=v.w);
+        document.getElementById('statWall').innerText = walls.length + ' 面';
+        document.getElementById('statPeri').innerText = peri.toFixed(2) + ' m';
+
+        // 坐标计算
+        let pts = [{x:0, y:0}];
+        let cx=0, cy=0;
+        walls.forEach((w, i) => {
+            let mod = i % 4;
+            if(mod===0) cx += w.w; else if(mod===1) cy += w.w;
+            else if(mod===2) cx -= w.w; else if(mod===3) cy -= w.w;
+            pts.push({x:cx, y:cy, len:w.w});
+        });
+
+        // 缩放适配
+        const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+        const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+        const sw = maxX - minX, sh = maxY - minY;
+        const pad = 60;
+        const scale = Math.min((W-pad*2)/(sw||1), (H-pad*2)/(sh||1));
+        const ox = (W - sw*scale)/2 - minX*scale;
+        const oy = (H - sh*scale)/2 - minY*scale;
+
+        // 绘制线条
+        ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 4; ctx.lineJoin='round'; ctx.beginPath();
+        pts.forEach((p, i) => {
+            const tx = p.x*scale+ox, ty = p.y*scale+oy;
+            if(i===0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+        });
+        ctx.stroke();
+
+        // 标注尺寸
+        ctx.fillStyle = '#60a5fa'; ctx.font = 'bold 12px sans-serif';
+        pts.forEach((p, i) => {
+            if(i===0) return;
+            const prev = pts[i-1];
+            const mx = ((prev.x+p.x)/2)*scale+ox;
+            const my = ((prev.y+p.y)/2)*scale+oy;
+            ctx.fillText(p.len+'m', mx+5, my-5);
+        });
+    }
+
+    // 照片处理
+    function handlePhotos(input) {
+        const pre = document.getElementById('photoPreview');
+        pre.innerHTML = '';
+        if(input.files) {
+            Array.from(input.files).forEach(f => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'img-thumb';
+                    pre.appendChild(img);
+                }
+                reader.readAsDataURL(f);
+            });
+        }
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
